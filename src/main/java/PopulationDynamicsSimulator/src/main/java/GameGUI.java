@@ -88,16 +88,16 @@ public class GameGUI extends JFrame {
         leftPanel.setPreferredSize(new Dimension(250, 0));
         leftPanel.setOpaque(false); // Transparent to show background color
         
-        // Status info at top of left panel
-        JPanel statusPanel = new JPanel(new GridLayout(2, 1, 5, 5));
-        statusPanel.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createEmptyBorder(5, 5, 5, 5),
-            BorderFactory.createTitledBorder(
-                BorderFactory.createLineBorder(Color.BLACK),
-                "Colony Status",
-                0, 0, JUNGLE_FONT_MEDIUM
-            )
-        ));
+        // Status info at top of left panel - now with custom background
+        ColonyStatusPanel statusPanel = new ColonyStatusPanel();
+        statusPanel.setBackground(new Color(0xEB9B6E)); // Match background for transparency
+        statusPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+        
+        // Create a container panel for the labels
+        JPanel statusContentPanel = new JPanel(new GridLayout(2, 1, 5, 5));
+        statusContentPanel.setOpaque(false); // Transparent to show background
+        statusContentPanel.setBorder(BorderFactory.createEmptyBorder(7, 8, 7, 8)); // top, left, bottom, right margins
+        
         statusLabel = new JLabel(String.format("<html><b>Day %d</b><br>Population: %.2f ants</html>", 
             game.getCurrentDay(), game.getPopulation()));
         statusLabel.setFont(JUNGLE_FONT_MEDIUM);
@@ -108,8 +108,10 @@ public class GameGUI extends JFrame {
         paramLabel.setFont(JUNGLE_FONT_SMALL);
         paramLabel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
         
-        statusPanel.add(statusLabel);
-        statusPanel.add(paramLabel);
+        statusContentPanel.add(statusLabel);
+        statusContentPanel.add(paramLabel);
+        
+        statusPanel.add(statusContentPanel, BorderLayout.CENTER);
         
         // News bar - custom panel with background image
         NewsPanel newsPanel = new NewsPanel();
@@ -168,53 +170,67 @@ public class GameGUI extends JFrame {
         leftPanel.add(statusPanel, BorderLayout.NORTH);
         leftPanel.add(newsPanel, BorderLayout.CENTER);
         
-        // Control buttons at bottom of left panel
-        JPanel controlPanel = new JPanel(new GridLayout(6, 1, 5, 8)); // Increased vertical gap
-        controlPanel.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createEmptyBorder(5, 5, 5, 5),
-            BorderFactory.createTitledBorder(
-                BorderFactory.createLineBorder(Color.BLACK),
-                "Actions",
-                0, 0, JUNGLE_FONT_MEDIUM
-            )
-        ));
+        // Control buttons at bottom of left panel - now with custom background
+        ActionsPanel controlPanel = new ActionsPanel();
+        controlPanel.setLayout(new BorderLayout(5, 5));
+        controlPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
         controlPanel.setBackground(new Color(0xEB9B6E)); // Match background color
         
-        JButton newDayButton = new JButton("New Day");
-        newDayButton.setFont(JUNGLE_FONT_BUTTON);
-        newDayButton.setBackground(new Color(100, 200, 100));
+        // Actions label at the top with custom image
+        ActionsLabelPanel actionsLabelPanel = new ActionsLabelPanel();
+        actionsLabelPanel.setPreferredSize(new Dimension(240, 40));
+        actionsLabelPanel.setOpaque(false);
+        controlPanel.add(actionsLabelPanel, BorderLayout.NORTH);
+        
+        // Button panel in the center
+        JPanel buttonPanel = new JPanel(new GridLayout(6, 1, 5, 8));
+        buttonPanel.setOpaque(false);
+        buttonPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+        
+        // Create custom action buttons with individual images
+        
+        // BUTTON MARGINS: New Day button
+        JButton newDayButton = createActionButton("New Day", "buttonnewday.png", 0, 0, 0, 0);
         newDayButton.addActionListener(e -> game.newDay());
         
-        JButton layMoreEggsButton = new JButton(String.format("<html><center>Lay More Eggs<br>(%+.0f%% r)</center></html>", 
-            (game.getLayMoreEggsRMultiplier() - 1) * 100));
-        layMoreEggsButton.setFont(JUNGLE_FONT_TINY);
+        // BUTTON MARGINS: Lay More Eggs button
+        JButton layMoreEggsButton = createActionButton(
+            String.format("<html><center>Lay More Eggs<br>(%+.0f%% r)</center></html>", 
+            (game.getLayMoreEggsRMultiplier() - 1) * 100), "buttonmoreeggs.png", 0, 0, 0, 0);
         layMoreEggsButton.addActionListener(e -> game.layMoreEggs());
         
-        JButton layLessEggsButton = new JButton(String.format("<html><center>Lay Less Eggs<br>(%+.0f%% r)</center></html>", 
-            (game.getLayLessEggsRMultiplier() - 1) * 100));
-        layLessEggsButton.setFont(JUNGLE_FONT_TINY);
+        // BUTTON MARGINS: Lay Less Eggs button
+        JButton layLessEggsButton = createActionButton(
+            String.format("<html><center>Lay Less Eggs<br>(%+.0f%% r)</center></html>", 
+            (game.getLayLessEggsRMultiplier() - 1) * 100), "buttonlesseggs.png", 0, 0, 0, 0);
         layLessEggsButton.addActionListener(e -> game.layLessEggs());
         
-        JButton buildChambersButton = new JButton(String.format("<html><center>Build Chambers<br>(%+.0f%% K, %+.0f%% A)</center></html>", 
-            (game.getBuildChambersKMultiplier() - 1) * 100, (game.getBuildChambersAMultiplier() - 1) * 100));
-        buildChambersButton.setFont(JUNGLE_FONT_TINY);
+        // BUTTON MARGINS: Build Chambers button
+        JButton buildChambersButton = createActionButton(
+            String.format("<html><center>Build Chambers<br>(%+.0f%% K, %+.0f%% A)</center></html>", 
+            (game.getBuildChambersKMultiplier() - 1) * 100, (game.getBuildChambersAMultiplier() - 1) * 100), 
+            "buttonmorechambers.png", 0, 0, 0, 0);
         buildChambersButton.addActionListener(e -> game.buildChambers());
         
-        JButton destroyChambersButton = new JButton(String.format("<html><center>Destroy Chambers<br>(%+.0f%% K, %+.0f%% A)</center></html>", 
-            (game.getDestroyChambersKMultiplier() - 1) * 100, (game.getDestroyChambersAMultiplier() - 1) * 100));
-        destroyChambersButton.setFont(JUNGLE_FONT_TINY);
+        // BUTTON MARGINS: Destroy Chambers button
+        JButton destroyChambersButton = createActionButton(
+            String.format("<html><center>Destroy Chambers<br>(%+.0f%% K, %+.0f%% A)</center></html>", 
+            (game.getDestroyChambersKMultiplier() - 1) * 100, (game.getDestroyChambersAMultiplier() - 1) * 100), 
+            "buttonlesschambers.png", 0, 0, 0, 0);
         destroyChambersButton.addActionListener(e -> game.destroyChambers());
         
-        JButton resetButton = new JButton("Reset Game");
-        resetButton.setFont(JUNGLE_FONT_BUTTON);
+        // BUTTON MARGINS: Reset Game button
+        JButton resetButton = createActionButton("Reset Game", "buttonreset.png", 0, 0, 0, 0);
         resetButton.addActionListener(e -> game.resetGame());
         
-        controlPanel.add(newDayButton);
-        controlPanel.add(layMoreEggsButton);
-        controlPanel.add(layLessEggsButton);
-        controlPanel.add(buildChambersButton);
-        controlPanel.add(destroyChambersButton);
-        controlPanel.add(resetButton);
+        buttonPanel.add(newDayButton);
+        buttonPanel.add(layMoreEggsButton);
+        buttonPanel.add(layLessEggsButton);
+        buttonPanel.add(buildChambersButton);
+        buttonPanel.add(destroyChambersButton);
+        buttonPanel.add(resetButton);
+        
+        controlPanel.add(buttonPanel, BorderLayout.CENTER);
         
         leftPanel.add(controlPanel, BorderLayout.SOUTH);
         
@@ -300,8 +316,8 @@ public class GameGUI extends JFrame {
         });
     }
     
-    private void printPanelDimensions(JPanel leftPanel, JPanel statusPanel, 
-                                     JPanel controlPanel, MainDisplayPanel mainDisplayPanel,
+    private void printPanelDimensions(JPanel leftPanel, ColonyStatusPanel statusPanel, 
+                                     ActionsPanel controlPanel, MainDisplayPanel mainDisplayPanel,
                                      JPanel technologyPanel, NewsPanel newsPanel,
                                      JPanel graphsPanel) {
         System.out.println("\n╔════════════════════════════════════════════════════╗");
@@ -409,6 +425,70 @@ public class GameGUI extends JFrame {
             System.err.println("Could not find " + imagePath + " - using text fallback");
             button = new JButton(fallbackText);
             button.setFont(JUNGLE_FONT_LARGE);
+        }
+        
+        return button;
+    }
+    
+    // Helper method to create action buttons with individual custom backgrounds and adjustable margins
+    private JButton createActionButton(String text, String imageName, int marginTop, int marginLeft, int marginBottom, int marginRight) {
+        String[] paths = {
+            "PopulationDynamicsSimulator/src/main/res/" + imageName,
+            "src/main/res/" + imageName,
+            "res/" + imageName,
+            "../res/" + imageName,
+            "../../res/" + imageName,
+            imageName
+        };
+        
+        BufferedImage buttonImage = null;
+        for (String path : paths) {
+            try {
+                File file = new File(path);
+                if (file.exists() && file.canRead()) {
+                    buttonImage = ImageIO.read(file);
+                    if (buttonImage != null) {
+                        System.out.println("Loaded " + imageName + " from: " + file.getAbsolutePath());
+                        break;
+                    }
+                }
+            } catch (Exception e) {
+                // Continue to next path
+            }
+        }
+        
+        JButton button;
+        if (buttonImage != null) {
+            // Create button with background image
+            ImageIcon icon = new ImageIcon(buttonImage);
+            button = new JButton(text, icon);
+            button.setHorizontalTextPosition(SwingConstants.LEFT);
+            button.setVerticalTextPosition(SwingConstants.CENTER);
+            button.setIconTextGap(-buttonImage.getWidth() / 2 + 0); // Offset text to left side
+            button.setBorderPainted(false);
+            button.setContentAreaFilled(false);
+            button.setFocusPainted(false);
+            
+            // Apply custom margins if specified
+            if (marginTop != 0 || marginLeft != 0 || marginBottom != 0 || marginRight != 0) {
+                button.setBorder(BorderFactory.createEmptyBorder(marginTop, marginLeft, marginBottom, marginRight));
+            }
+        } else {
+            // Fallback to standard button
+            System.err.println("Could not find " + imageName + " - using standard button");
+            button = new JButton(text);
+            
+            // Special styling for New Day button
+            if (imageName.contains("newday")) {
+                button.setBackground(new Color(100, 200, 100));
+            }
+        }
+        
+        // Set font - New Day and Reset use larger font
+        if (imageName.contains("newday") || imageName.contains("reset")) {
+            button.setFont(JUNGLE_FONT_BUTTON);
+        } else {
+            button.setFont(JUNGLE_FONT_TINY);
         }
         
         return button;
@@ -811,6 +891,177 @@ public class GameGUI extends JFrame {
                 // Draw background image stretched to fit panel
                 g2.drawImage(backgroundImage, 0, 0, getWidth(), getHeight(), null);
             }
+        }
+    }
+    
+    // Custom panel for colony status with background image
+    class ColonyStatusPanel extends JPanel {
+        private BufferedImage backgroundImage;
+        
+        public ColonyStatusPanel() {
+            setLayout(new BorderLayout());
+            loadBackgroundImage();
+        }
+        
+        private void loadBackgroundImage() {
+            try {
+                String[] paths = {
+                    "PopulationDynamicsSimulator/src/main/res/colonystatus.png",
+                    "src/main/res/colonystatus.png",
+                    "res/colonystatus.png",
+                    "../res/colonystatus.png",
+                    "../../res/colonystatus.png",
+                    "colonystatus.png"
+                };
+                
+                for (String path : paths) {
+                    File file = new File(path);
+                    if (file.exists() && file.canRead()) {
+                        backgroundImage = ImageIO.read(file);
+                        if (backgroundImage != null) {
+                            System.out.println("Loaded colonystatus.png from: " + file.getAbsolutePath());
+                            return;
+                        }
+                    }
+                }
+                
+                System.err.println("Could not find colonystatus.png - using default background");
+                backgroundImage = null;
+                
+            } catch (Exception e) {
+                System.err.println("Error loading colonystatus.png: " + e.getMessage());
+                backgroundImage = null;
+            }
+        }
+        
+        @Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+            
+            if (backgroundImage != null) {
+                Graphics2D g2 = (Graphics2D) g;
+                // Draw background image stretched to fit panel
+                g2.drawImage(backgroundImage, 0, 0, getWidth(), getHeight(), null);
+            }
+        }
+    }
+    
+    // Custom panel for actions with background image
+    class ActionsPanel extends JPanel {
+        private BufferedImage backgroundImage;
+        
+        public ActionsPanel() {
+            loadBackgroundImage();
+        }
+        
+        private void loadBackgroundImage() {
+            try {
+                String[] paths = {
+                    "PopulationDynamicsSimulator/src/main/res/actionspanel.png",
+                    "src/main/res/actionspanel.png",
+                    "res/actionspanel.png",
+                    "../res/actionspanel.png",
+                    "../../res/actionspanel.png",
+                    "actionspanel.png"
+                };
+                
+                for (String path : paths) {
+                    File file = new File(path);
+                    if (file.exists() && file.canRead()) {
+                        backgroundImage = ImageIO.read(file);
+                        if (backgroundImage != null) {
+                            System.out.println("Loaded actionspanel.png from: " + file.getAbsolutePath());
+                            return;
+                        }
+                    }
+                }
+                
+                System.err.println("Could not find actionspanel.png - using default background");
+                backgroundImage = null;
+                
+            } catch (Exception e) {
+                System.err.println("Error loading actionspanel.png: " + e.getMessage());
+                backgroundImage = null;
+            }
+        }
+        
+        @Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+            
+            if (backgroundImage != null) {
+                Graphics2D g2 = (Graphics2D) g;
+                // Draw background image stretched to fit panel
+                g2.drawImage(backgroundImage, 0, 0, getWidth(), getHeight(), null);
+            }
+        }
+    }
+    
+    // Custom panel for actions label with background image and text
+    class ActionsLabelPanel extends JPanel {
+        private BufferedImage backgroundImage;
+        
+        public ActionsLabelPanel() {
+            loadBackgroundImage();
+        }
+        
+        private void loadBackgroundImage() {
+            try {
+                String[] paths = {
+                    "PopulationDynamicsSimulator/src/main/res/actionslabel.png",
+                    "src/main/res/actionslabel.png",
+                    "res/actionslabel.png",
+                    "../res/actionslabel.png",
+                    "../../res/actionslabel.png",
+                    "actionslabel.png"
+                };
+                
+                for (String path : paths) {
+                    File file = new File(path);
+                    if (file.exists() && file.canRead()) {
+                        backgroundImage = ImageIO.read(file);
+                        if (backgroundImage != null) {
+                            System.out.println("Loaded actionslabel.png from: " + file.getAbsolutePath());
+                            return;
+                        }
+                    }
+                }
+                
+                System.err.println("Could not find actionslabel.png - using default background");
+                backgroundImage = null;
+                
+            } catch (Exception e) {
+                System.err.println("Error loading actionslabel.png: " + e.getMessage());
+                backgroundImage = null;
+            }
+        }
+        
+        @Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+            Graphics2D g2 = (Graphics2D) g;
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+            
+            // Draw background image if available
+            if (backgroundImage != null) {
+                g2.drawImage(backgroundImage, 0, 0, getWidth(), getHeight(), null);
+            }
+            
+            // Draw "ACTIONS" text in red Ink Free font
+            g2.setColor(Color.RED);
+            g2.setFont(new Font("Ink Free", Font.BOLD, 20));
+            
+            String text = "ACTIONS";
+            FontMetrics fm = g2.getFontMetrics();
+            int textWidth = fm.stringWidth(text);
+            int textHeight = fm.getAscent();
+            
+            // Center the text
+            int x = (getWidth() - textWidth) / 2;
+            int y = (getHeight() + textHeight) / 2 - 2; // -2 to adjust baseline
+            
+            g2.drawString(text, x, y);
         }
     }
     
