@@ -1,0 +1,146 @@
+# Ant Colony Manager - Allee Effect Population Model
+
+A Java-based simulation game that models ant colony population dynamics using the Allee effect equation. Manage your colony through various strategic decisions while observing complex population behaviors including chaos and bifurcations.
+
+## Population Model
+
+The game uses the Allee effect population model:
+```
+x(n+1) = x(n) + r·x(n)·(1 - x(n)/K)·(x(n)/A - 1)
+```
+
+Where:
+- **x** = current population (normalized)
+- **r** = growth rate (reproduction rate)
+- **K** = carrying capacity (maximum sustainable population)
+- **A** = Allee threshold (minimum viable population)
+
+## How to Run
+
+1. Compile (already done):
+   ```bash
+   javac AntColonyGame.java
+   ```
+
+2. Run the game:
+   ```bash
+   java AntColonyGame
+   ```
+
+## Game Controls
+
+### Main Control
+- **New Day** - Advances time by one day, updates population, and triggers a random event
+
+### Random Events
+Every time you press "New Day", there's a chance a random event occurs! Event probabilities:
+- **75% chance**: Beautiful day (no effect)
+- **12% chance**: Common events (minor effects)
+- **9% chance**: Uncommon events (moderate effects)
+- **3% chance**: Rare events (significant effects)
+- **1% chance**: Very rare events (major effects)
+
+Events include:
+- Weather changes (rain, drought, storms)
+- Predator encounters
+- Resource discoveries
+- Disease outbreaks
+- Competitor colonies
+- Structural changes
+- And many more!
+
+Each event shows a notification explaining what happened and how it affects your colony parameters (r, K, or A).
+
+### Strategic Decisions
+
+1. **Lay More Eggs** (+20% r)
+   - Increases reproductive rate
+   - May lead to rapid growth or chaos
+   
+2. **Lay Less Eggs** (-25% r)
+   - Decreases reproductive rate
+   - Stabilizes population at lower levels
+   
+3. **Build Chambers** (+15% K, -20% A)
+   - Increases carrying capacity
+   - Lowers the Allee threshold (easier to sustain population)
+   
+4. **Destroy Chambers** (-30% K, +15% A)
+   - Decreases carrying capacity
+   - Raises the Allee threshold (harder to sustain population)
+
+5. **Reset Game** - Restart with initial parameters
+
+## Initial Parameters
+
+- Population (x): 50 ants
+- Growth rate (r): 0.5
+- Carrying capacity (K): 100
+- Allee threshold (A): 10
+
+## The Four Graphs
+
+### 1. Population History (Blue)
+Shows the actual population over time from day 0 to present. This is your colony's historical record.
+
+### 2. Population Projection (Green)
+Projects the next 100 days into the future based on current parameters. A red dot marks "you are here" (current day/population). Useful for planning strategic decisions.
+
+### 3. Lyapunov Exponent (Red)
+Shows system stability for different r values:
+- **Negative values** → Stable, predictable population
+- **Near zero** → Periodic or quasi-periodic behavior
+- **Positive values** → Chaotic, unpredictable population
+
+### 4. Bifurcation Diagram (Magenta)
+Shows all possible long-term population states for different r values with current K and A:
+- Single line → Stable equilibrium
+- Multiple branches → Periodic oscillations
+- Scattered cloud → Chaos
+
+## Strategy Tips
+
+1. **Avoid Extinction**: Keep population above the Allee threshold (A)
+2. **Watch for Chaos**: High r values can lead to unpredictable population swings
+3. **Balance Growth**: Too much growth can crash the population
+4. **Monitor Projections**: Use the green graph to see consequences before they happen
+5. **Study Bifurcations**: The bifurcation diagram shows safe and dangerous r ranges
+
+## Game Over Condition
+
+If your population drops below 0.1, the colony goes extinct and you lose!
+
+## Understanding the Allee Effect
+
+The Allee effect describes situations where small populations have difficulty surviving and reproducing:
+- Below threshold A: Population tends toward extinction
+- Between A and K: Population can grow
+- Above K: Population exceeds carrying capacity and declines
+
+This creates interesting dynamics where populations can crash if they get too small, even if environmental conditions are good.
+
+## Technical Details
+
+- Built with Java Swing for the GUI
+- Real-time graph updates
+- Numerical simulation of nonlinear dynamics
+- Lyapunov exponent calculation for chaos detection
+- Bifurcation analysis for parameter space exploration
+- Modular design with separate RandomEvent class
+- All graphs display first quadrant only (positive values)
+- Button effects use configurable parameters (not hardcoded)
+- Weighted probability distribution for random events
+
+## Code Structure
+
+- `AntColonyGame.java` - Main game class with UI and population dynamics
+- `RandomEvent.java` - Separate class handling random events with probability distribution (23 different weighted events)
+
+## Enjoy Managing Your Colony!
+
+Watch for emergent behaviors like:
+- Period doubling routes to chaos
+- Stable limit cycles
+- Strange attractors
+- Sensitivity to initial conditions
+- Critical transitions
