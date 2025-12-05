@@ -1,16 +1,18 @@
 package PopulationDynamicsSimulator.src.main.java;
 
-
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+/**
+ * Generates random events that affect the colony.
+ */
 public class RandomEvent {
     private Random random;
     private List<WeightedEvent> eventPool;
     
-    // Event class to hold event information
+    // ==================== INNER CLASS: Event ====================
+    
     public static class Event {
         public String message;
         public double rMultiplier;
@@ -31,7 +33,8 @@ public class RandomEvent {
         }
     }
     
-    // Weighted event for probability distribution
+    // ==================== INNER CLASS: WeightedEvent ====================
+    
     private static class WeightedEvent {
         Event event;
         double weight;
@@ -41,6 +44,8 @@ public class RandomEvent {
             this.weight = weight;
         }
     }
+    
+    // ==================== CONSTRUCTORS ====================
     
     public RandomEvent() {
         random = new Random();
@@ -52,17 +57,18 @@ public class RandomEvent {
         initializeEventPool();
     }
     
+    // ==================== EVENT POOL INITIALIZATION ====================
+    
     private void initializeEventPool() {
         eventPool = new ArrayList<>();
         
-        // 75% chance of no event - weight of 75
+        // 75% chance of no event
         eventPool.add(new WeightedEvent(
             new Event("☀️ It's a beautiful day today!", 1.0, 1.0, 1.0),
             75.0
         ));
         
-        // Remaining 25% distributed among actual events
-        // Common events (weight 3 each) - about 12% total
+        // Common events (weight 3 each)
         eventPool.add(new WeightedEvent(
             new Event("🌧️ Light rainfall. The colony found some food.\n+5% growth rate", 1.05, 1.0, 1.0),
             3.0
@@ -83,7 +89,7 @@ public class RandomEvent {
             3.0
         ));
         
-        // Uncommon events (weight 1.5 each) - about 9% total
+        // Uncommon events (weight 1.5 each)
         eventPool.add(new WeightedEvent(
             new Event("☀️ Hot day. Workers are less active.\n-10% growth rate", 0.90, 1.0, 1.0),
             1.5
@@ -114,7 +120,7 @@ public class RandomEvent {
             1.5
         ));
         
-        // Rare events (weight 0.5 each) - about 4% total
+        // Rare events (weight 0.5 each)
         eventPool.add(new WeightedEvent(
             new Event("🦎 Predator spotted near colony!\n-10% carrying capacity, +8% Allee threshold", 1.0, 0.90, 1.08),
             0.5
@@ -155,7 +161,7 @@ public class RandomEvent {
             0.5
         ));
         
-        // Very rare events (weight 0.2 each) - about 1% total
+        // Very rare events (weight 0.2 each)
         eventPool.add(new WeightedEvent(
             new Event("🦠 Disease outbreak! Colony health compromised.\n-25% growth rate, +15% Allee threshold", 0.75, 1.0, 1.15),
             0.2
@@ -192,18 +198,17 @@ public class RandomEvent {
         ));
     }
     
+    // ==================== PUBLIC METHODS ====================
+    
     /**
-     * Generates a random event based on probability distribution
-     * @return Event object containing message and parameter multipliers
+     * Generates a random event based on probability distribution.
      */
     public Event generateEvent() {
-        // Calculate total weight
         double totalWeight = 0;
         for (WeightedEvent we : eventPool) {
             totalWeight += we.weight;
         }
         
-        // Select random event based on weight
         double randomValue = random.nextDouble() * totalWeight;
         double cumulativeWeight = 0;
         
@@ -214,7 +219,6 @@ public class RandomEvent {
             }
         }
         
-        // Fallback (should never reach here)
         return eventPool.get(0).event;
     }
 }
