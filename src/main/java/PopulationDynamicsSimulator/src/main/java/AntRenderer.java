@@ -36,12 +36,13 @@ public class AntRenderer {
         loadAntImages();
         animationStartTime = System.currentTimeMillis();
     }
+
     
     // ==================== IMAGE LOADING ====================
     
     private void loadAntImages() {
-        String[] antFileNames = { "ant1.png", "ant2.png" , "snail.png"};
-        double[] defaultWeights = { 0.5, 0.2 ,0.01};  // Equal weights by default
+        String[] antFileNames = { "ant1.png", "ant2.png" , "ant3.png", "snail.png"};
+        double[] defaultWeights = { 0.5, 0.2, 0.2, 0.01};  // Equal weights by default
         
         for (int i = 0; i < antFileNames.length; i++) {
             BufferedImage img = loadImage(antFileNames[i]);
