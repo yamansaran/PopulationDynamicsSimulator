@@ -14,7 +14,8 @@ import javax.imageio.ImageIO;
  * Renders animated worker ants around the queen.
  */
 public class AntRenderer {
-    private BufferedImage antImage;
+    private List<BufferedImage> antImages;
+    private List<Double> antWeights;  // Weights for each ant image (probabilities)
     private List<AntPosition> ants;
     private Random random;
     
@@ -29,15 +30,108 @@ public class AntRenderer {
     
     public AntRenderer() {
         ants = new ArrayList<>();
+        antImages = new ArrayList<>();
+        antWeights = new ArrayList<>();
         random = new Random();
-        loadAntImage();
+        loadAntImages();
         animationStartTime = System.currentTimeMillis();
     }
     
     // ==================== IMAGE LOADING ====================
     
-    private void loadAntImage() {
-        antImage = loadImage("ant1.png");
+    private void loadAntImages() {
+        String[] antFileNames = { "ant1.png", "ant2.png" , "snail.png"};
+        double[] defaultWeights = { 0.5, 0.2 ,0.01};  // Equal weights by default
+        
+        for (int i = 0; i < antFileNames.length; i++) {
+            BufferedImage img = loadImage(antFileNames[i]);
+            if (img != null) {
+                antImages.add(img);
+                antWeights.add(defaultWeights[i]);
+            }
+        }
+        
+        // Normalize weights to sum to 1.0
+        normalizeWeights();
+        
+        if (antImages.isEmpty()) {
+            System.err.println("WARNING: No ant images loaded - ants will not be rendered");
+        }
+    }
+    
+    /**
+     * Gets a random ant image using weighted probabilities.
+     * Each ant type has a different likelihood of being selected.
+     */
+    private BufferedImage getRandomAntImage() {
+        if (antImages.isEmpty()) {
+            return null;
+        }
+        
+        // Use weighted selection if we have weights
+        if (!antWeights.isEmpty() && antWeights.size() == antImages.size()) {
+            return getRandomAntImageWithWeights();
+        }
+        
+        // Fallback to uniform random selection
+        return antImages.get(random.nextInt(antImages.size()));
+    }
+    
+    /**
+     * Selects a random ant image based on weighted probabilities.
+     * Uses cumulative probability distribution for selection.
+     */
+    private BufferedImage getRandomAntImageWithWeights() {
+        double rand = random.nextDouble();  // [0.0, 1.0)
+        double cumulative = 0.0;
+        
+        for (int i = 0; i < antWeights.size(); i++) {
+            cumulative += antWeights.get(i);
+            if (rand < cumulative) {
+                return antImages.get(i);
+            }
+        }
+        
+        // Fallback (shouldn't reach here if weights are properly normalized)
+        return antImages.get(antImages.size() - 1);
+    }
+    
+    /**
+     * Normalizes weights so they sum to 1.0
+     */
+    private void normalizeWeights() {
+        if (antWeights.isEmpty()) {
+            return;
+        }
+        
+        double sum = antWeights.stream().mapToDouble(Double::doubleValue).sum();
+        if (sum > 0) {
+            for (int i = 0; i < antWeights.size(); i++) {
+                antWeights.set(i, antWeights.get(i) / sum);
+            }
+        }
+    }
+    
+    /**
+     * Sets custom weights for ant images.
+     * Weights don't need to sum to 1.0 - they will be normalized automatically.
+     * Example: setAntWeights(Arrays.asList(70.0, 30.0)) for 70% ant1, 30% ant2
+     */
+    public void setAntWeights(List<Double> weights) {
+        if (weights.size() != antImages.size()) {
+            throw new IllegalArgumentException(
+                "Number of weights (" + weights.size() + ") must match number of ant images (" + antImages.size() + ")"
+            );
+        }
+        this.antWeights = new ArrayList<>(weights);
+        normalizeWeights();
+    }
+    
+    /**
+     * Gets the current weights for ant images (normalized to sum to 1.0)
+     */
+    public List<Double> getAntWeights() {
+        return new ArrayList<>(antWeights);
     }
     
     private BufferedImage loadImage(String imageName) {
@@ -134,16 +228,21 @@ public class AntRenderer {
     // ==================== RENDERING ====================
     
     public void renderAnts(Graphics2D g2) {
-        if (antImage == null || ants.isEmpty()) {
+        if (antImages.isEmpty() || ants.isEmpty()) {
             return;
         }
-        
-        int scaledWidth = (int) (antImage.getWidth() * antScaleFactor);
-        int scaledHeight = (int) (antImage.getHeight() * antScaleFactor);
         
         double currentTime = (System.currentTimeMillis() - animationStartTime) / 1000.0;
         
         for (AntPosition ant : ants) {
+            BufferedImage antImage = ant.getAntImage();
+            if (antImage == null) {
+                continue;
+            }
+            
+            int scaledWidth = (int) (antImage.getWidth() * antScaleFactor);
+            int scaledHeight = (int) (antImage.getHeight() * antScaleFactor);
+            
             Point animatedPos = ant.getAnimatedPosition(currentTime);
             double animatedRotation = ant.getAnimatedRotation(currentTime);
             
@@ -170,10 +269,11 @@ public class AntRenderer {
     
     // ==================== INNER CLASS: AntPosition ====================
     
-    private static class AntPosition {
+    private class AntPosition {
         int baseX;
         int baseY;
         double rotation;
+        BufferedImage antImage;
         
         AnimationType animType;
         double animSpeed;
@@ -194,6 +294,7 @@ public class AntRenderer {
             this.baseX = x;
             this.baseY = y;
             this.rotation = rotation;
+            this.antImage = getRandomAntImage();
             this.phaseOffset = random.nextDouble() * Math.PI * 2;
             
             double typeRoll = random.nextDouble();
@@ -298,6 +399,10 @@ public class AntRenderer {
             }
             
             return rot;
+        }
+        
+        BufferedImage getAntImage() {
+            return antImage;
         }
     }
 }
