@@ -69,6 +69,40 @@ public class AntColonyGame {
     public double getDestroyChambersKMultiplier() { return destroyChambersKMultiplier; }
     public double getDestroyChambersAMultiplier() { return destroyChambersAMultiplier; }
     
+    // Setters for technology effects
+    public void setR(double newR) { 
+        this.r = newR;
+        if (this.r < 0) this.r = 0;
+    }
+    public void setX(double newX) { 
+        this.x = newX;
+        if (this.x < 0) this.x = 0;
+    }
+    public void setA(double newA) { 
+        this.A = newA;
+        if (this.A < 0) this.A = 0;
+    }
+    
+    /**
+     * Deducts technology points by advancing the day counter.
+     * Since tech points = currentDay / 10, deducting 1 point means advancing 10 days.
+     */
+    public boolean deductTechnologyPoints(int points) {
+        int pointsNeeded = points * 10;
+        if (getTechnologyPoints() >= points) {
+            currentDay += pointsNeeded;
+            return true;
+        }
+        return false;
+    }
+    
+    /**
+     * Calculates technology points earned: 1 point per 10 days
+     */
+    public int getTechnologyPoints() {
+        return currentDay / 10;
+    }
+    
     /**
      * The Allee effect population model.
      */

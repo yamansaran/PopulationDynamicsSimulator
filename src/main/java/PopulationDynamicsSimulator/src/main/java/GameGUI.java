@@ -6,8 +6,10 @@ import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.GridLayout;
 import java.awt.image.BufferedImage;
+import java.io.File;
 import java.util.List;
 
+import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
@@ -33,6 +35,7 @@ public class GameGUI extends JFrame {
     // UI Components
     private JLabel statusLabel;
     private JLabel paramLabel;
+    private JLabel techPointsLabel;
     private JTextArea newsBar;
     private GraphPanel historyPanel;
     private GraphPanel projectionPanel;
@@ -253,23 +256,142 @@ public class GameGUI extends JFrame {
         mainContentPanel.setOpaque(false);
         mainContentPanel.add(centerPanel, BorderLayout.CENTER);
         
-        // Technology placeholder
+        // Technology panel with tech points counter (uses TechPanel.png if available)
         JPanel technologyPanel = new JPanel(new BorderLayout());
         technologyPanel.setPreferredSize(new Dimension(0, 120));
-        technologyPanel.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createEmptyBorder(5, 5, 5, 5),
-            BorderFactory.createTitledBorder(
-                BorderFactory.createLineBorder(Color.BLACK),
-                "Technology Tree (Coming Soon)",
-                0, 0, GameFonts.MEDIUM
-            )
-        ));
-        technologyPanel.setBackground(new Color(240, 240, 240));
+        // Remove borders/titles so the background image can cover entire panel
+        technologyPanel.setBorder(null);
+        // Ensure panel background matches the app default so transparent areas show correctly
+        technologyPanel.setBackground(BACKGROUND_COLOR);
+
+        JPanel techPointsPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 5));
+        techPointsPanel.setOpaque(false);
+        techPointsLabel = new JLabel(String.format("<html><b>Tech Points: %d</b></html>", 
+            game.getTechnologyPoints()));
+        techPointsLabel.setFont(GameFonts.LARGE);
+        techPointsLabel.setForeground(new Color(0, 0, 0));
+        techPointsPanel.add(techPointsLabel);
+
+        // Try to load background image for the technology panel
+        BufferedImage techBg = null;
+        String[] bgPaths = new String[] {
+            "PopulationDynamicsSimulator/src/main/res/TechPanel.png",
+            "src/main/res/TechPanel.png",
+            "res/TechPanel.png",
+            "TechPanel.png"
+        };
+        for (String p : bgPaths) {
+            try {
+                File f = new File(p);
+                if (f.exists() && f.canRead()) {
+                    techBg = ImageIO.read(f);
+                    if (techBg != null) break;
+                }
+            } catch (Exception ex) {
+                // ignore and try next path
+            }
+        }
+
+        // Make the loaded image available as final for use in anonymous inner classes
+        final BufferedImage finalTechBg = techBg;
+
+        // Create invisible overlay panel with absolute positioning for buttons
+        JPanel buttonOverlay = new JPanel(null) {  // null layout = absolute positioning
+            @Override
+            protected void paintComponent(java.awt.Graphics g) {
+                // Invisible - just for positioning
+            }
+            
+            @Override
+            protected void paintChildren(java.awt.Graphics g) {
+                // Allow children to render outside panel bounds (no clipping)
+                java.awt.Graphics2D g2d = (java.awt.Graphics2D) g;
+                java.awt.Shape originalClip = g2d.getClip();
+                g2d.setClip(null);  // Disable clipping
+                super.paintChildren(g2d);
+                g2d.setClip(originalClip);  // Restore original clip
+            }
+        };
+        buttonOverlay.setOpaque(false);
+
+        // Button 1: Nanny Ants (increases A by 1, costs 1 tech point)
+        JButton button1 = createTechButton(
+            "techbutton1.png",
+            "Nanny Ants",
+            () -> {
+                if (game.deductTechnologyPoints(-1)) {
+                    game.setA(game.getA() + (game.getK() * 0.05) );
+                    updateStatus();
+                }
+            }
+        );
+        buttonOverlay.add(button1);
+
+        // Button 2: Cull (reduces population by 50%, costs 1 tech point)
+        JButton button2 = createTechButton(
+            "techbutton2.png",
+            "Cull",
+            () -> {
+                if (game.deductTechnologyPoints(-1)) {
+                    game.setX(game.getPopulation() * 0.5);
+                    updateStatus();
+                }
+            }
+        );
+        buttonOverlay.add(button2);
+
+        // Button 3: Breeding Frenzy (multiplies r by 2.5, costs 1 tech point)
+        JButton button3 = createTechButton(
+            "techbutton3.png",
+            "Breeding Frenzy",
+            () -> {
+                if (game.deductTechnologyPoints(-1)) {
+                    game.setR(game.getR() * 2.5);
+                    updateStatus();
+                }
+            }
+        );
+        buttonOverlay.add(button3);
         
-        JLabel techPlaceholder = new JLabel("Technology upgrades will appear here", SwingConstants.CENTER);
-        techPlaceholder.setFont(GameFonts.MEDIUM);
-        techPlaceholder.setForeground(Color.GRAY);
-        technologyPanel.add(techPlaceholder, BorderLayout.CENTER);
+        // Update button positions when overlay is resized
+        buttonOverlay.addComponentListener(new java.awt.event.ComponentAdapter() {
+            @Override
+            public void componentResized(java.awt.event.ComponentEvent e) {
+                int w = buttonOverlay.getWidth();
+                int yPos = -15;  // Positioned higher, allowing top to extend above panel
+                button1.setBounds(w - 100 - 55, yPos, 110, 90);  // 150px from right
+                button2.setBounds(w - 250 - 55, yPos, 110, 90);  // 300px from right
+                button3.setBounds(w - 400 - 55, yPos, 110, 90);  // 450px from right
+            }
+        });
+
+        if (finalTechBg != null) {
+            // Create a panel that paints the background scaled to fill the whole area
+            JPanel bgPanel = new JPanel(new BorderLayout()) {
+                @Override
+                protected void paintComponent(java.awt.Graphics g) {
+                    super.paintComponent(g);
+                    g.drawImage(finalTechBg, 0, 0, getWidth(), getHeight(), null);
+                }
+            };
+            bgPanel.setOpaque(true);
+            bgPanel.setBackground(BACKGROUND_COLOR);
+            bgPanel.add(techPointsPanel, BorderLayout.NORTH);
+            bgPanel.add(buttonOverlay, BorderLayout.CENTER);
+            technologyPanel.add(bgPanel, BorderLayout.CENTER);
+        } else {
+            // No background image; add the tech points panel to the top-left and buttons overlay
+            technologyPanel.add(techPointsPanel, BorderLayout.NORTH);
+            technologyPanel.add(buttonOverlay, BorderLayout.CENTER);
+        }
+
+        // Debug: print technology panel size when rendered
+        technologyPanel.addComponentListener(new java.awt.event.ComponentAdapter() {
+            @Override
+            public void componentResized(java.awt.event.ComponentEvent e) {
+                System.out.println("Technology Panel Size: " + e.getComponent().getWidth() + "x" + e.getComponent().getHeight() + " pixels");
+            }
+        });
         
         mainContentPanel.add(technologyPanel, BorderLayout.SOUTH);
         
@@ -319,6 +441,50 @@ public class GameGUI extends JFrame {
         return button;
     }
     
+    /**
+     * Creates a technology button with image background and centered text overlay.
+     * Button size: 110x90 pixels.
+     */
+    private JButton createTechButton(String imageName, String buttonText, Runnable action) {
+        BufferedImage buttonImage = ImageLoader.load(imageName, false);
+        
+        JButton button = new JButton(buttonText) {
+            @Override
+            protected void paintComponent(java.awt.Graphics g) {
+                // Fill background with button color if no image
+                if (buttonImage != null) {
+                    g.drawImage(buttonImage, 0, 0, getWidth(), getHeight(), null);
+                }
+                // Draw centered text (5 pixels lower)
+                java.awt.FontMetrics fm = g.getFontMetrics();
+                int x = (getWidth() - fm.stringWidth(buttonText)) / 2;
+                int y = ((getHeight() - fm.getHeight()) / 2) + fm.getAscent() + 5;
+                g.setColor(Color.WHITE);
+                g.drawString(buttonText, x, y);
+            }
+        };
+        
+        button.setPreferredSize(new Dimension(110, 90));
+        button.setMinimumSize(new Dimension(110, 90));
+        button.setMaximumSize(new Dimension(110, 90));
+        button.setFont(GameFonts.MEDIUM);
+        button.setForeground(Color.WHITE);
+        button.setBorderPainted(false);
+        button.setContentAreaFilled(false);
+        button.setFocusPainted(false);
+        button.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        
+        button.addActionListener(e -> {
+            try {
+                action.run();
+            } catch (Exception ex) {
+                System.err.println("Error executing tech button action: " + ex.getMessage());
+                ex.printStackTrace();
+            }
+        });
+        
+        return button;
+    }
     // ==================== PUBLIC API ====================
     
     public void updateStatus() {
@@ -326,6 +492,8 @@ public class GameGUI extends JFrame {
             game.getCurrentDay(), game.getPopulation()));
         paramLabel.setText(String.format("<html>r=%.3f<br>K=%.2f<br>A=%.2f</html>", 
             game.getR(), game.getK(), game.getA()));
+        techPointsLabel.setText(String.format("<html><b>Tech Points: %d</b></html>", 
+            game.getTechnologyPoints()));
         
         int antCount = (int) Math.round(game.getPopulation());
         mainDisplayPanel.updateAnts(antCount);
